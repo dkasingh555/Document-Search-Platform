@@ -1,0 +1,296 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Document Search Platform Agentic RAG API",
+    "description": "REST API backend for integrating with OpenWebUI, built with Docling, PGVector, LlamaIndex, CrewAI, and Arize Phoenix.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns the health status of the backend API.",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "timestamp": {
+                      "type": "number",
+                      "example": 1690000000.123
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/query": {
+      "post": {
+        "summary": "Execute Query",
+        "description": "Runs a user query through the contextual Agentic RAG pipeline (LlamaIndex + CrewAI) and returns the synthesized answer.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "The search query or question.",
+                    "example": "What is chemical decomposition?"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "query": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "type": "string",
+                      "description": "The generated answer from the Agentic RAG pipeline."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "summary": "Chat Completions (OpenAI Compatible)",
+        "description": "Exposes an OpenAI-compatible API for seamless integration with frontend frameworks like OpenWebUI. Extracts the latest user message to execute the Agentic RAG pipeline.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["model", "messages"],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "description": "Model identifier requested by the client.",
+                    "example": "llama3.1:8b"
+                  },
+                  "messages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["role", "content"],
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["system", "user", "assistant"],
+                          "example": "user"
+                        },
+                        "content": {
+                          "type": "string",
+                          "example": "Explain chemical reactions."
+                        }
+                      }
+                    }
+                  },
+                  "temperature": {
+                    "type": "number",
+                    "default": 0.7
+                  },
+                  "stream": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "chatcmpl-12345678"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "chat.completion"
+                    },
+                    "created": {
+                      "type": "integer",
+                      "example": 1690000000
+                    },
+                    "model": {
+                      "type": "string",
+                      "example": "llama3.1:8b"
+                    },
+                    "choices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer",
+                            "example": 0
+                          },
+                          "message": {
+                            "type": "object",
+                            "properties": {
+                              "role": {
+                                "type": "string",
+                                "example": "assistant"
+                              },
+                              "content": {
+                                "type": "string",
+                                "example": "A chemical reaction is..."
+                              }
+                            }
+                          },
+                          "finish_reason": {
+                            "type": "string",
+                            "example": "stop"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/ingest": {
+      "post": {
+        "summary": "Trigger Ingestion",
+        "description": "Starts the document ingestion pipeline as a background task. Parses PDFs, processes markdown, computes vector embeddings, and stores them in PGVector.",
+        "responses": {
+          "200": {
+            "description": "Ingestion triggered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Ingestion started in the background."
+                    },
+                    "state": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "running"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Document ingestion in progress..."
+                        },
+                        "last_run": {
+                          "type": "number",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingest/status": {
+      "get": {
+        "summary": "Check Ingestion Status",
+        "description": "Returns the status of the current or last document ingestion task.",
+        "responses": {
+          "200": {
+            "description": "Ingestion status returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["idle", "running", "success", "failed", "error"],
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Ingestion completed successfully."
+                    },
+                    "last_run": {
+                      "type": "number",
+                      "example": 1690000000.123
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evaluate": {
+      "post": {
+        "summary": "Trigger RAG Evaluation",
+        "description": "Triggers the pipeline evaluation using RAGAs and local Ollama model in the background.",
+        "responses": {
+          "200": {
+            "description": "Evaluation triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "RAG evaluation triggered in the background. Check logs or check results JSON later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

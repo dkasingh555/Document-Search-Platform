@@ -1,0 +1,19 @@
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "rag_db"
+
+models:
+  llm: "llama3.1:8b"
+  embedding: "nomic-embed-text"
+  ollama_url: "http://localhost:11434"
+
+paths:
+  pdf_dir: "d:/Assignment/pdf/Science X (eng)"
+  prompts_file: "prompts/prompts.yaml"
+
+ingestion:
+  chunk_size: 1024
+  chunk_overlap: 128
